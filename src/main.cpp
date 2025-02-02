@@ -40,7 +40,7 @@ void ShowInfo(uint16_t bg_color)
 {
   M5.Display.fillRect(0, 201, 320, 39, bg_color);
   M5.Display.setTextColor(TFT_WHITE, bg_color);
-  M5.Display.setCursor(10, 201); M5.Display.printf("%.0f", tm);
+  M5.Display.setCursor(10, 201); M5.Display.printf("%.0fs", tm);
   if (dur != 0 & tms != 0)
     M5.Display.printf(" (%.0f / %.0f)", tm - tms, dur);
 
@@ -160,13 +160,13 @@ void loop() {
             tms = tm; bg_color = TFT_MAGENTA;
           }
           else if (st == 10){
-            tms = tm; bg_color = TFT_RED;
+            tms = 0; bg_color = TFT_RED;
           }
           else if (st == 11){
             tms = tm; bg_color = TFT_PURPLE;
           }
           else if (st == 20 || st == 21){
-            tms = tm; bg_color = TFT_DARKCYAN;
+            tms = 0; bg_color = TFT_DARKCYAN;
           }
         }
         st0 = st;
