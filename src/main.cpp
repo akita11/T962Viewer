@@ -11,23 +11,12 @@ uint8_t p = 0;
 // Time (ElaspTime/Dur) <--- 200
 // 10   50   
 
-float tm01 = 0.0, tm12 = 0.0, tm23 = 0.0, tm = 0.0, 
+float tms = 0.0, tm = 0.0, 
       temp = 0.0, temp_target = 0.0, temp_th = 0.0,
       dur = 0.0;
 uint8_t st = 0, st0 = 0, fRun = 0;
 uint8_t s1, s2;
 int ctrl = 0;
-
-void DrawFloat(float v, int x, int y, float size, uint16_t color)
-{
-  char str[80];
-  M5.Display.setTextColor(color);
-  M5.Display.setTextSize(size);
-  if (v == 0.0) strcpy(str, "--"); else sprintf(str, "%.1f", v);
-//  sprintf(str, "%.1f", v);
-  M5.Display.drawString(str, x, y);
-
-}
 
 uint16_t temp_conv(float temp)
 {
@@ -49,12 +38,11 @@ uint16_t time_conv(uint16_t t)
 
 void ShowInfo(uint16_t bg_color)
 {
-  M5.Display.drawRect(0, 200, 320, 40, bg_color);
-  M5.Display.setTextSize(2.5);
-  M5.Display.setCursor(10, 200); M5.Display.printf("%.1f", tm);
-  if (dur != 0){
-    M5.Display.setCursor(50, 200); M5.Display.printf("(%.1f / %.1f)", tm01, dur);
-  }
+  M5.Display.fillRect(0, 201, 320, 39, bg_color);
+  M5.Display.setTextColor(TFT_WHITE, bg_color);
+  M5.Display.setCursor(10, 201); M5.Display.printf("%.0f", tm);
+  if (dur != 0 & tms != 0)
+    M5.Display.printf(" (%.0f / %.0f)", tm - tms, dur);
 
 /*
   M5.Display.setTextSize(1.5); M5.Display.drawString("Dur", 20, 160);
@@ -88,16 +76,25 @@ void setup() {
   Serial1.begin(115200, SERIAL_8N1, 22, 21); // PortA
   auto cfg = M5.config(); 
   M5.begin(cfg);
-  M5.Display.setFont(&fonts::Font4);
   M5.Display.fillScreen(TFT_BLACK);
   M5.Display.drawFastHLine(0, 200, 320, TFT_WHITE);
-  for (uint16_t tmp = 50; tmp < 300; tmp+=50)
+  M5.Display.drawFastHLine(0, temp_conv(20), 320, TFT_DARKGRAY);
+  M5.Display.setFont(&fonts::Font4);
+  for (uint16_t tmp = 50; tmp < 300; tmp+=50){
     M5.Display.drawFastHLine(0, temp_conv(tmp), 320, TFT_DARKGRAY);
+    if (tmp % 100 == 0){
+      M5.Display.setCursor(0, temp_conv(tmp)- 13);
+      M5.Display.printf("%d", tmp);
+
+    }
+  }
   for (uint16_t t = 0; t < 360; t+=60)
     M5.Display.drawFastVLine(time_conv(t), 0, 200, TFT_DARKGRAY);
+  M5.Display.setFont(&fonts::Font4);
+  M5.Display.setTextSize(1.5, 1.8);
 
 
-  M5.Display.drawFastVLine(200, 0, 200, TFT_WHITE);
+  M5.Display.drawFastVLine(0, 0, 200, TFT_WHITE);
 }  
 
 // st fr  st'
@@ -111,6 +108,26 @@ void setup() {
 uint16_t bg_color = 0x0000;
 
 void loop() {
+  /*
+  // for debug
+  M5.update();
+  if (M5.BtnA.wasClicked()){
+    tm += 1.0;
+    temp = 20 + tm;
+    temp_th = temp + 10;
+    temp_target = temp + 20;
+    printf("%.1f %.1f %.1f\n", tm, temp, temp_th, temp_target);
+    if (tm < 10) bg_color = TFT_BLACK;
+    else if (tm < 20) bg_color = TFT_ORANGE;
+    else if (tm < 30) bg_color = TFT_MAGENTA;
+    else if (tm < 40) bg_color = TFT_RED;
+    else if (tm < 50) bg_color = TFT_PURPLE;
+    else bg_color = TFT_DARKCYAN;
+    if (tm > 20) dur = 10;
+    if (tm == 20) tms = tm;
+    ShowInfo(bg_color);
+  }
+*/
   while(Serial1.available()){
     char c = Serial1.read();
     buf[p++] = c;
@@ -122,7 +139,7 @@ void loop() {
       if (strcmp(fd, "Reflow") == 0){
          fRun = 0;
          tm = 0.0; temp_target = 0.0; temp_th = 0.0;
-         tm01 = 0.0; tm12 = 0.0; tm23 = 0.0;
+         tms = 0.0;
          ShowInfo(TFT_BLACK);
       }
       if (fRun == 1){
@@ -140,16 +157,16 @@ void loop() {
         if (st != st0){
           if (st == 0) bg_color = TFT_ORANGE;
           else if (st == 1){
-            tm01 = tm; bg_color = TFT_MAGENTA;
+            tms = tm; bg_color = TFT_MAGENTA;
           }
           else if (st == 10){
-            tm12 = tm; bg_color = TFT_RED;
+            tms = tm; bg_color = TFT_RED;
           }
           else if (st == 11){
-            tm12 = tm; bg_color = TFT_PURPLE;
+            tms = tm; bg_color = TFT_PURPLE;
           }
           else if (st == 20 || st == 21){
-            tm23 = tm; bg_color = TFT_DARKCYAN;
+            tms = tm; bg_color = TFT_DARKCYAN;
           }
         }
         st0 = st;
